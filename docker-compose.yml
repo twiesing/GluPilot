@@ -1,5 +1,5 @@
 services:
-  be-berater:
+  app:
     image: ghcr.io/twiesing/glupilot:latest
     restart: unless-stopped
     # Secrets (OPENAI_API_KEY, DEXCOM_*, API_TOKEN, Korrekturwerte) aus .env
@@ -19,4 +19,3 @@ services:
 
 networks:
   caddy:
-    external: true
