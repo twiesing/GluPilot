@@ -6,11 +6,11 @@ services:
     env_file: .env
     environment:
       - TZ=Europe/Berlin
-      - CADDY_DOMAIN=be-berater.example.com
+      - CADDY_DOMAIN
       - CADDY_WWW_REDIRECT=false
       - CADDY_TYPE=external
       - CADDY_PORT=8080
-      - CADDY_SEO=true
+      - CADDY_SEO
       # App lauscht auf dem von Caddy erwarteten Port.
       - PORT=8080
       - HOST=0.0.0.0
