@@ -285,6 +285,11 @@
         font-family: var(--serif);
         font-style: italic;
       }
+      .hero-exact {
+        color: #b6a48c;
+        font-size: 13px;
+        margin-top: 6px;
+      }
 
       .grid {
         display: grid;
@@ -583,6 +588,7 @@
         <div class="hero">
           <div class="hero-label">Insulin</div>
           <div class="hero-iu"><span id="iu">–</span><span class="unit">IE</span></div>
+          <div class="hero-exact" id="heroExact"></div>
           <div class="hero-sub" id="heroSub">Faktor 0,5 · 12 g je BE</div>
           <div class="glucose-pill" id="glucosePill" style="display: none"></div>
         </div>
@@ -766,6 +772,8 @@
 
       function render(d) {
         $("iu").textContent = fmt(d.insulin_units);
+        if (d.insulin_units_exact != null)
+          $("heroExact").textContent = "berechnet: " + fmt(d.insulin_units_exact) + " IE";
         $("kh").textContent = fmt(d.carbs_g);
         $("be").textContent = fmt(d.be);
         if (d.factor_iu_per_be != null)
@@ -798,6 +806,11 @@
           pill.innerHTML =
             `🩸 <b>${g.mgdl}</b> mg/dL ` +
             `<span class="arrow">${g.trend_arrow || ""}</span> ${g.trend_label} · ${ago}`;
+          pill.style.display = "inline-flex";
+        } else if (d.dexcom_configured) {
+          // Dexcom aktiv, aber gerade kein Wert abrufbar.
+          pill.className = "glucose-pill";
+          pill.innerHTML = "🩸 Dexcom aktiv · kein aktueller Wert";
           pill.style.display = "inline-flex";
         } else {
           pill.style.display = "none";

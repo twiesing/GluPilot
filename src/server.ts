@@ -133,6 +133,7 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
       split_reason: estimate.split_reason,
       split,
       glucose,
+      dexcom_configured: dexcomConfigured(),
       hint: hint ?? "",
       image_count: images.length,
       disclaimer: DISCLAIMER,

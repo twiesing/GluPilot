@@ -10,6 +10,10 @@ export const FACTOR_IU_PER_BE = Number(process.env.BOLUS_FACTOR_IU_PER_BE ?? 0.5
 export const TARGET_MGDL = Number(process.env.CORRECTION_TARGET_MGDL ?? 100);
 /** Korrekturfaktor: um wie viel mg/dL 1 IE den Blutzucker senkt. */
 export const CORRECTION_ISF_MGDL = Number(process.env.CORRECTION_ISF_MGDL ?? 60);
+/** Erst ab diesem Blutzucker (mg/dL) wird überhaupt eine Korrektur vorgeschlagen. */
+export const CORRECTION_THRESHOLD_MGDL = Number(
+  process.env.CORRECTION_THRESHOLD_MGDL ?? 160,
+);
 
 /** Rundet auf 0,5 (übliche Pen-Schrittweite). */
 function roundToHalf(value: number): number {
@@ -29,6 +33,8 @@ export interface DosingResult {
   isf_mgdl: number;
   /** Gesamtdosis = Mahlzeit + Korrektur, nie unter 0. */
   insulin_units: number;
+  /** Gesamtdosis ungerundet (vor Rundung auf Pen-Schrittweite). */
+  insulin_units_exact: number;
 }
 
 /**
@@ -40,14 +46,18 @@ export function calculateDosing(
   glucoseMgdl?: number,
 ): DosingResult {
   const be = carbsGrams / GRAMS_PER_BE;
-  const meal = roundToHalf(be * FACTOR_IU_PER_BE);
+  const mealExact = be * FACTOR_IU_PER_BE;
+  const meal = roundToHalf(mealExact);
 
   let correction: number | null = null;
-  if (typeof glucoseMgdl === "number") {
-    correction = roundToHalf((glucoseMgdl - TARGET_MGDL) / CORRECTION_ISF_MGDL);
+  let correctionExact = 0;
+  if (typeof glucoseMgdl === "number" && glucoseMgdl >= CORRECTION_THRESHOLD_MGDL) {
+    correctionExact = (glucoseMgdl - TARGET_MGDL) / CORRECTION_ISF_MGDL;
+    correction = roundToHalf(correctionExact);
   }
 
   const total = Math.max(0, meal + (correction ?? 0));
+  const totalExact = Math.max(0, mealExact + correctionExact);
 
   return {
     carbs_g: Math.round(carbsGrams),
@@ -58,6 +68,7 @@ export function calculateDosing(
     target_mgdl: TARGET_MGDL,
     isf_mgdl: CORRECTION_ISF_MGDL,
     insulin_units: roundToHalf(total),
+    insulin_units_exact: Math.round(totalExact * 100) / 100,
   };
 }
 
