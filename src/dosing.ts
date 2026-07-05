@@ -3,8 +3,8 @@
 /** Kohlenhydrate pro Broteinheit (BE). */
 export const GRAMS_PER_BE = 12;
 
-/** Insulinfaktor: IE pro BE. Fest 0,5 laut Anforderung. */
-export const FACTOR_IU_PER_BE = 0.5;
+/** Insulinfaktor: IE pro BE (Default 0,5, per Env überschreibbar). */
+export const FACTOR_IU_PER_BE = Number(process.env.BOLUS_FACTOR_IU_PER_BE ?? 0.5);
 
 /** Blutzucker-Zielwert (mg/dL) für die Korrektur. */
 export const TARGET_MGDL = Number(process.env.CORRECTION_TARGET_MGDL ?? 100);

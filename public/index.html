@@ -583,7 +583,7 @@
         <div class="hero">
           <div class="hero-label">Insulin</div>
           <div class="hero-iu"><span id="iu">–</span><span class="unit">IE</span></div>
-          <div class="hero-sub">Faktor 0,5 · 12 g je BE</div>
+          <div class="hero-sub" id="heroSub">Faktor 0,5 · 12 g je BE</div>
           <div class="glucose-pill" id="glucosePill" style="display: none"></div>
         </div>
         <div class="grid">
@@ -768,6 +768,8 @@
         $("iu").textContent = fmt(d.insulin_units);
         $("kh").textContent = fmt(d.carbs_g);
         $("be").textContent = fmt(d.be);
+        if (d.factor_iu_per_be != null)
+          $("heroSub").textContent = "Faktor " + fmt(d.factor_iu_per_be) + " · 12 g je BE";
         const items = $("items");
         items.innerHTML = "";
         (d.items || []).forEach((it) => {

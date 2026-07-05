@@ -143,6 +143,7 @@ Einfachster, getesteter Aufbau (ein Foto, roher Datei-Body):
 | `PORT`                  | `8787`       | Port.                                        |
 | `HOST`                  | `0.0.0.0`    | `0.0.0.0` = im LAN erreichbar.               |
 | `API_TOKEN`             | – (leer)     | Wenn gesetzt: Bearer-Token für `/analyze`.   |
+| `BOLUS_FACTOR_IU_PER_BE`| `0.5`        | Insulinfaktor: IE pro BE.                    |
 | `DEXCOM_REGION`         | `ous`        | `ous` (Europa), `us`, `jp`.                  |
 | `DEXCOM_USERNAME`       | – (leer)     | Dexcom-Share-Konto; leer = Glukose aus.      |
 | `DEXCOM_PASSWORD`       | – (leer)     | Dexcom-Share-Passwort.                       |
