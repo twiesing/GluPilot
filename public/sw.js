@@ -1,7 +1,7 @@
-// Service Worker für die BE-Berater PWA.
+// Service Worker für die GluPilot PWA.
 // Cacht die App-Shell, damit die App installierbar ist und offline startet.
 // Analyse-Requests (POST /analyze) laufen immer live übers Netz.
-const CACHE = "be-berater-v3";
+const CACHE = "glupilot-v1";
 const SHELL = [
   "/",
   "/icons/icon.svg",

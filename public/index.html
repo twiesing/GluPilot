@@ -8,12 +8,12 @@
     />
     <meta name="theme-color" content="#efe7d6" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="BE-Berater" />
+    <meta name="apple-mobile-web-app-title" content="GluPilot" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <title>BE-Berater</title>
+    <title>GluPilot</title>
     <style>
       :root {
         --paper: #efe7d6;
@@ -550,7 +550,7 @@
     <div class="wrap">
       <header>
         <div class="kicker">Diabetes · Kohlenhydrate</div>
-        <h1>BE-Berater</h1>
+        <h1>GluPilot</h1>
         <div class="sub">Ein Foto, eine Schätzung, deine Dosis.</div>
       </header>
 
@@ -654,12 +654,12 @@
       (function () {
         const m = location.hash.match(/token=([^&]+)/);
         if (m) {
-          localStorage.setItem("beberater_token", decodeURIComponent(m[1]));
+          localStorage.setItem("glupilot_token", decodeURIComponent(m[1]));
           history.replaceState(null, "", location.pathname);
         }
       })();
       const authHeaders = () => {
-        const t = localStorage.getItem("beberater_token");
+        const t = localStorage.getItem("glupilot_token");
         return t ? { Authorization: "Bearer " + t } : {};
       };
 
@@ -667,15 +667,15 @@
       $("settingsToggle").addEventListener("click", toggleSettings);
       $("tokenSave").addEventListener("click", () => {
         const v = $("tokenInput").value.trim();
-        if (v) localStorage.setItem("beberater_token", v);
-        else localStorage.removeItem("beberater_token");
+        if (v) localStorage.setItem("glupilot_token", v);
+        else localStorage.removeItem("glupilot_token");
         $("tokenHint").textContent = v ? "Gespeichert." : "Token entfernt.";
       });
       function toggleSettings(forceOpen) {
         const s = $("settings");
         const open = forceOpen === true || s.style.display === "none" || !s.style.display;
         s.style.display = open ? "block" : "none";
-        if (open) $("tokenInput").value = localStorage.getItem("beberater_token") || "";
+        if (open) $("tokenInput").value = localStorage.getItem("glupilot_token") || "";
       }
 
       // Reset / neue Mahlzeit

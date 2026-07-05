@@ -1,7 +1,9 @@
-# glucose-shortcut-sidecar
+# GluPilot
 
-Kleine HTTP-API für Apple Shortcuts: Mahlzeit fotografieren → OpenAI-Vision schätzt
-die Kohlenhydrate → die API rechnet BE und Insulinmenge (Faktor **0,5 IE/BE**, **12 g/BE**).
+Mahlzeit fotografieren → OpenAI-Vision schätzt die Kohlenhydrate → die App rechnet BE
+und Insulinmenge (Faktor **0,5 IE/BE**, **12 g/BE**), optional mit Blutzucker-Korrektur
+(Dexcom) und Split-Bolus. Als installierbare **PWA** und als HTTP-API (auch für Apple
+Shortcuts).
 
 > ⚠️ **Kein Medizinprodukt, keine ärztliche Beratung.** Die Kohlenhydrat-Schätzung
 > ist ungenau. Menge und Dosis **vor jeder Injektion selbst prüfen**. Nutzung auf
@@ -49,7 +51,7 @@ Vor dem Deploy anpassen:
   optional `API_TOKEN`, `DEXCOM_*` und die Korrekturwerte.
 
 Ist das GHCR-Package privat, auf dem Server einmalig `docker login ghcr.io` (oder Package
-öffentlich schalten). Lokal testen: `docker build -t be-berater . && docker run -p 8080:8080 --env-file .env be-berater`.
+öffentlich schalten). Lokal testen: `docker build -t glupilot . && docker run -p 8080:8080 --env-file .env glupilot`.
 
 ## API
 

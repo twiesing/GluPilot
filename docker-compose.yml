@@ -7,7 +7,7 @@ services:
     environment:
       - TZ=Europe/Berlin
       - CADDY_DOMAIN=be-berater.example.com
-      - CADDY_WWW_REDIRECT=true
+      - CADDY_WWW_REDIRECT=false
       - CADDY_TYPE=external
       - CADDY_PORT=8080
       - CADDY_SEO=true

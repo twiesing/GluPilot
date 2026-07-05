@@ -1,6 +1,6 @@
 {
-  "name": "BE-Berater",
-  "short_name": "BE-Berater",
+  "name": "GluPilot",
+  "short_name": "GluPilot",
   "description": "Foto einer Mahlzeit → geschätzte Kohlenhydrate, BE und Insulinmenge.",
   "start_url": "/",
   "scope": "/",
