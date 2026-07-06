@@ -4,8 +4,18 @@ import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import { estimateCarbs } from "./vision.js";
-import { calculateDosing, splitBolus } from "./dosing.js";
+import {
+  calculateDosing,
+  splitBolus,
+  GRAMS_PER_BE,
+  FACTOR_IU_PER_BE,
+  TARGET_MGDL,
+  CORRECTION_ISF_MGDL,
+  CORRECTION_THRESHOLD_MGDL,
+} from "./dosing.js";
 import { getLatestGlucose, dexcomConfigured } from "./dexcom.js";
+import { appendHistory, readHistory, clearHistory } from "./history.js";
+import { pushConfigured, addReminder, startReminderScheduler } from "./push.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(HERE, "..", "public");
@@ -36,11 +46,19 @@ app.addContentTypeParser(
   (_req, body, done) => done(null, body),
 );
 
-// Optionaler Zugriffsschutz per Bearer-Token – schützt nur die Analyse-API,
-// die Web-App-Assets (HTML, Icons, Manifest, SW) bleiben öffentlich.
+// Optionaler Zugriffsschutz per Bearer-Token – schützt Analyse, Historie,
+// Glukose, Erinnerungen und Faktoren; nur /health und die Web-App-Assets
+// (HTML, Icons, Manifest, SW) bleiben öffentlich.
 app.addHook("onRequest", async (request, reply) => {
   if (!API_TOKEN) return;
-  if (!request.url.startsWith("/analyze")) return;
+  if (
+    !request.url.startsWith("/analyze") &&
+    !request.url.startsWith("/history") &&
+    !request.url.startsWith("/glucose") &&
+    !request.url.startsWith("/reminders") &&
+    !request.url.startsWith("/config")
+  )
+    return;
   const header = request.headers.authorization ?? "";
   if (header !== `Bearer ${API_TOKEN}`) {
     reply.code(401).send({ error: "Unauthorized" });
@@ -51,6 +69,15 @@ app.addHook("onRequest", async (request, reply) => {
 app.register(fastifyStatic, { root: PUBLIC_DIR });
 
 app.get("/health", async () => ({ status: "ok" }));
+
+// Dosier-Faktoren (read-only) für die Anzeige in den Einstellungen.
+app.get("/config", async () => ({
+  grams_per_be: GRAMS_PER_BE,
+  factor_iu_per_be: FACTOR_IU_PER_BE,
+  target_mgdl: TARGET_MGDL,
+  isf_mgdl: CORRECTION_ISF_MGDL,
+  correction_threshold_mgdl: CORRECTION_THRESHOLD_MGDL,
+}));
 
 interface AnalyzeBody {
   images?: unknown;
@@ -123,6 +150,22 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
       ? splitBolus(dosing.meal_units, dosing.correction_units ?? 0)
       : null;
 
+    // Ergebnis persistieren (best effort – Schreibfehler blockieren die Antwort nie).
+    appendHistory({
+      ts: new Date().toISOString(),
+      insulin_units: dosing.insulin_units,
+      insulin_units_exact: dosing.insulin_units_exact,
+      carbs_g: dosing.carbs_g,
+      be: dosing.be,
+      meal_units: dosing.meal_units,
+      correction_units: dosing.correction_units,
+      confidence: estimate.confidence,
+      hint: hint ?? "",
+      items: estimate.items,
+      glucose_mgdl: glucose?.mgdl ?? null,
+      image_count: images.length,
+    }).catch((e) => request.log.error(e, "history append failed"));
+
     return {
       ...dosing,
       confidence: estimate.confidence,
@@ -134,6 +177,7 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
       split,
       glucose,
       dexcom_configured: dexcomConfigured(),
+      reminders_enabled: pushConfigured(),
       hint: hint ?? "",
       image_count: images.length,
       disclaimer: DISCLAIMER,
@@ -144,13 +188,55 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
   }
 });
 
+// Aktueller Glukosewert (Dexcom) – für die permanente Anzeige in der App.
+app.get("/glucose", async () => ({
+  glucose: await getLatestGlucose(),
+  dexcom_configured: dexcomConfigured(),
+}));
+
+// Verlauf früherer Berechnungen (neueste zuerst).
+app.get("/history", async () => ({ entries: await readHistory() }));
+
+// Verlauf löschen.
+app.delete("/history", async () => {
+  await clearHistory();
+  return { status: "cleared" };
+});
+
+interface ReminderBody {
+  minutes?: unknown;
+  title?: unknown;
+  body?: unknown;
+}
+
+// Erinnerung planen (Versand via Pushover, wenn konfiguriert).
+app.post<{ Body: ReminderBody }>("/reminders", async (request, reply) => {
+  if (!pushConfigured()) {
+    reply.code(503).send({ error: "Erinnerungen nicht konfiguriert." });
+    return;
+  }
+  const b = request.body ?? {};
+  const minutes = Number(b.minutes);
+  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 1440) {
+    reply.code(400).send({ error: "minutes muss zwischen 1 und 1440 liegen." });
+    return;
+  }
+  const title = typeof b.title === "string" && b.title.trim() ? b.title.trim() : "GluPilot";
+  const body =
+    typeof b.body === "string" && b.body.trim() ? b.body.trim() : "Erinnerung";
+  const id = await addReminder(minutes, title, body);
+  return { id, due_in_minutes: minutes };
+});
+
 app
   .listen({ port: PORT, host: HOST })
-  .then((address) =>
+  .then((address) => {
+    startReminderScheduler((msg, err) => app.log.error({ err }, msg));
     app.log.info(
-      `Sidecar läuft auf ${address} (Dexcom: ${dexcomConfigured() ? "aktiv" : "aus"})`,
-    ),
-  )
+      `GluPilot läuft auf ${address} (Dexcom: ${dexcomConfigured() ? "aktiv" : "aus"}, ` +
+        `Erinnerungen: ${pushConfigured() ? "aktiv" : "aus"})`,
+    );
+  })
   .catch((err) => {
     app.log.error(err);
     process.exit(1);
