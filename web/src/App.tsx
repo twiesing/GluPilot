@@ -45,6 +45,8 @@ export function App() {
   }
 
   async function onCancelReminder(id: string) {
+    // Optimistisch entfernen, damit ein bereits abgelaufener „Geist" sofort weg ist.
+    setReminders((rs) => rs.filter((r) => r.id !== id));
     try {
       await cancelReminder(id);
     } finally {

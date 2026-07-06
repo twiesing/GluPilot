@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button, Card, HStack, Text, VStack } from "@astryxdesign/core";
 import type { Reminder } from "./api";
 import { clockTime } from "./format";
@@ -7,9 +8,22 @@ export function ActiveReminders({
   onCancel,
 }: {
   reminders: Reminder[];
-  onCancel: (id: string) => void;
+  onCancel: (id: string) => Promise<void>;
 }) {
-  if (reminders.length === 0) return null;
+  const [busy, setBusy] = useState<string | null>(null);
+
+  // Abgelaufene (schon verschickte) nicht mehr anzeigen.
+  const active = reminders.filter((r) => r.due > Date.now() - 5000);
+  if (active.length === 0) return null;
+
+  async function cancel(id: string) {
+    setBusy(id);
+    try {
+      await onCancel(id);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <Card padding={3} className="elev">
@@ -17,7 +31,7 @@ export function ActiveReminders({
         <Text type="label" color="accent">
           Laufende Erinnerungen
         </Text>
-        {reminders.map((r) => (
+        {active.map((r) => (
           <HStack key={r.id} justify="between" vAlign="center" gap={2}>
             <VStack gap={0}>
               <Text size="sm" weight="medium">
@@ -31,7 +45,8 @@ export function ActiveReminders({
               label="Abbrechen"
               variant="ghost"
               size="sm"
-              onClick={() => onCancel(r.id)}
+              isDisabled={busy === r.id}
+              onClick={() => cancel(r.id)}
             />
           </HStack>
         ))}

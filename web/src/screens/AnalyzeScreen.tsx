@@ -22,7 +22,7 @@ interface Props {
   glucose: Glucose | null;
   dexcomConfigured: boolean;
   reminders: Reminder[];
-  onCancelReminder: (id: string) => void;
+  onCancelReminder: (id: string) => Promise<void>;
   onRemindersChanged: () => void;
   onAddFiles: (files: File[]) => void;
   onRemovePhoto: (i: number) => void;
