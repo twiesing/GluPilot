@@ -1,0 +1,482 @@
+/* Shell-Layout & Feinschliff – nutzt Astryx-Theme-Tokens (neutral). */
+
+:root {
+  --shell-max: 460px;
+  --nav-h: 62px;
+  /* Neutral-Theme nutzt light-dark()-Tokens -> Dark Mode folgt dem System. */
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+  /* Astryx setzt die Schrift nur auf den eigenen Komponenten – body sonst Times. */
+  font-family: var(--font-family-body);
+  background: var(--color-background-body);
+  color: var(--color-text-primary);
+  min-height: 100%;
+}
+
+/* App-Rahmen: scrollender Inhalt über fester Bottom-Navigation. */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.app__main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 34px) 20px
+    calc(var(--nav-h) + env(safe-area-inset-bottom) + 36px);
+}
+
+/* Screen = Flex-Spalte mit großzügigem, gleichmäßigem Abstand. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Screen-Wechsel: sanftes Einblenden mit gestaffeltem Aufsteigen. */
+.screen > * {
+  opacity: 0;
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.screen > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.screen > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.screen > *:nth-child(3) {
+  animation-delay: 0.14s;
+}
+.screen > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.screen > *:nth-child(n + 5) {
+  animation-delay: 0.26s;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen > * {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Masthead */
+.masthead__kicker {
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.wordmark {
+  letter-spacing: -0.01em;
+}
+
+/* Weiche Elevation für Karten – gibt der App den „schwebende Kacheln"-Look. */
+.elev {
+  border-radius: 16px !important;
+  box-shadow:
+    0 8px 24px -14px rgba(20, 25, 30, 0.22),
+    0 1px 2px rgba(20, 25, 30, 0.05);
+}
+
+/* Akzent-Panel (Blickfang) – für Dosis-Hero und Tages-Statistik. */
+.accent-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+.accent-panel::after {
+  content: "";
+  position: absolute;
+  right: -54px;
+  top: -54px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+.accent-panel__label {
+  position: relative;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.accent-panel__row {
+  position: relative;
+  display: flex;
+  gap: 30px;
+}
+.accent-panel__cap {
+  font-size: 12px;
+  opacity: 0.85;
+}
+.accent-panel__num {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+/* Hero-Dosis – der eine Blickfang. */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 26px 24px 22px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.hero__num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 72px;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+}
+.hero__unit {
+  font-size: 24px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-left: 8px;
+}
+.hero__label {
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.hero__meta {
+  position: relative;
+  font-size: 13px;
+  opacity: 0.92;
+}
+.hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zahl-Kacheln */
+.metric {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Foto-Thumbnails */
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.thumb {
+  position: relative;
+  width: 88px;
+  height: 88px;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+.thumb__x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--color-text-primary);
+  color: var(--color-background-card);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Aufnahme-Hero (leerer Zustand) */
+.capture-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  padding: 36px 24px 30px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      130% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-accent) 9%, transparent),
+      transparent 62%
+    ),
+    var(--color-background-card);
+}
+.hero-badge {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-background-card));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 26%, transparent);
+}
+.capture-hero .full {
+  width: 100%;
+}
+
+/* Permanente Blutzucker-Leiste */
+.bg-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+}
+.bg-bar__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: #0d8626;
+}
+.bg-bar__val {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.bg-bar__unit {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+.bg-bar__arrow {
+  font-size: 17px;
+  color: var(--color-text-accent);
+}
+.bg-bar__meta {
+  margin-left: auto;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.bg-bar[data-range="low"] .bg-bar__dot {
+  background: #e3193b;
+}
+.bg-bar[data-range="low"] .bg-bar__val {
+  color: #e3193b;
+}
+.bg-bar[data-range="high"] .bg-bar__dot {
+  background: #e9af08;
+}
+.bg-bar[data-range="high"] .bg-bar__val {
+  color: #b26a00;
+}
+.bg-bar[data-range="none"] {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+/* Variante B: großes farbiges Tap-Panel als Primäraktion */
+.capture-panel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 32px 24px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.2s ease;
+}
+.capture-panel:active {
+  transform: scale(0.985);
+}
+.capture-panel::after {
+  content: "";
+  position: absolute;
+  right: -54px;
+  top: -54px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.capture-panel__badge {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  position: relative;
+}
+.capture-panel__title {
+  position: relative;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.capture-panel__sub {
+  position: relative;
+  font-size: 13px;
+  opacity: 0.86;
+}
+
+/* Dezenter 3-Schritt-Ablauf */
+.steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 4px;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+}
+.step__ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+}
+.step__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+.step__sep {
+  flex: 0 0 auto;
+  margin-top: 18px;
+  color: var(--color-border-emphasized);
+}
+
+/* Weiteres-Foto-Kachel */
+.thumb--add {
+  border: 1.5px dashed var(--color-border-emphasized);
+  border-radius: 10px;
+  background: var(--color-background-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 26px;
+}
+
+/* Feste Bottom-Navigation */
+.bottomnav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px calc(env(safe-area-inset-bottom) + 8px);
+  background: color-mix(in srgb, var(--color-background-card) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-top: 1px solid var(--color-border);
+}
+.bottomnav__inner {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: var(--shell-max);
+}
+.navitem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px 5px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    transform 0.12s ease;
+}
+.navitem:active {
+  transform: scale(0.94);
+}
+.navitem[data-active="true"] {
+  color: var(--color-text-accent);
+  background: var(--color-background-muted);
+}
+.navitem__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.navitem svg {
+  width: 22px;
+  height: 22px;
+}

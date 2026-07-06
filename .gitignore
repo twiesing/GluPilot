@@ -1,5 +1,8 @@
 node_modules/
 dist/
+data/
+# public/ wird aus web/ gebaut (Vite outDir).
+public/
 .env
 *.log
 .DS_Store

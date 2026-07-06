@@ -61,6 +61,10 @@ export function dexcomConfigured(): boolean {
 
 let sessionId: string | null = null;
 
+// Kurzer Cache, damit nicht jeder Client-Poll live gegen Dexcom geht.
+const CACHE_MS = Number(process.env.GLUCOSE_CACHE_SECONDS ?? 60) * 1000;
+let glucoseCache: { reading: GlucoseReading; at: number } | null = null;
+
 async function postJson(path: string, body: unknown): Promise<string> {
   const res = await fetch(`${BASE}/ShareWebServices/Services/${path}`, {
     method: "POST",
@@ -113,6 +117,15 @@ function parseTimestamp(wt: unknown): number {
 export async function getLatestGlucose(): Promise<GlucoseReading | null> {
   if (!dexcomConfigured()) return null;
 
+  // Frischer Cache-Treffer: minutes_ago um die Cache-Alterung korrigieren.
+  if (glucoseCache && Date.now() - glucoseCache.at < CACHE_MS) {
+    const agedMin = Math.round((Date.now() - glucoseCache.at) / 60000);
+    return {
+      ...glucoseCache.reading,
+      minutes_ago: glucoseCache.reading.minutes_ago + agedMin,
+    };
+  }
+
   const fetchLatest = async (): Promise<string> => {
     if (!sessionId) sessionId = await login();
     const url =
@@ -140,13 +153,15 @@ export async function getLatestGlucose(): Promise<GlucoseReading | null> {
 
     const trend = parseTrend(row.Trend);
     const ts = parseTimestamp(row.WT);
-    return {
+    const reading: GlucoseReading = {
       mgdl: row.Value,
       mmol: Math.round((row.Value / 18.0182) * 10) / 10,
       trend_arrow: trend.arrow,
       trend_label: trend.label,
       minutes_ago: Math.max(0, Math.round((Date.now() - ts) / 60000)),
     };
+    glucoseCache = { reading, at: Date.now() };
+    return reading;
   } catch {
     return null;
   }

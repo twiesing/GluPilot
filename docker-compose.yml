@@ -14,8 +14,14 @@ services:
       # App lauscht auf dem von Caddy erwarteten Port.
       - PORT=8080
       - HOST=0.0.0.0
+    volumes:
+      # Verlauf (data/history.jsonl) über Neustarts hinweg persistieren.
+      - glupilot-data:/app/data
     networks:
       caddy:
+
+volumes:
+  glupilot-data:
 
 networks:
   caddy:

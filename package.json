@@ -1,12 +1,14 @@
 {
-  "name": "glucose-shortcut-sidecar",
+  "name": "glupilot",
   "version": "1.0.0",
-  "description": "",
+  "description": "GluPilot – Mahlzeit fotografieren, Kohlenhydrate & Insulindosis schätzen (PWA + API).",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:web": "pnpm --filter web dev",
     "start": "tsx src/server.ts",
-    "build": "tsc",
+    "build": "tsc && pnpm --filter web build",
+    "build:server": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
