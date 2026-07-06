@@ -1,23 +1,34 @@
 import { useState } from "react";
-import { Button, Card, HStack, Text, VStack } from "@astryxdesign/core";
+import { Button, Card, Text, VStack } from "@astryxdesign/core";
 import { scheduleReminder, type AnalyzeResult } from "./api";
-import { fmt } from "./format";
+import { clockTime, fmt } from "./format";
 
-export function ReminderCard({ d }: { d: AnalyzeResult }) {
+export function ReminderCard({
+  d,
+  onScheduled,
+}: {
+  d: AnalyzeResult;
+  onScheduled: () => void;
+}) {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function schedule(
-    minutes: number,
-    title: string,
-    body: string,
-    note: string,
-  ) {
+  // Erinnerung nur sinnvoll beim aufgeteilten Bolus (2. Teil nachspritzen).
+  const split = d.split_recommended ? d.split : null;
+  if (!split) return null;
+
+  async function schedule() {
+    if (!split) return;
     setBusy(true);
     setStatus("");
     try {
-      await scheduleReminder(minutes, title, body);
-      setStatus(note);
+      const { due } = await scheduleReminder(
+        split.delay_hours * 60,
+        "2. Bolus-Teil fällig",
+        `${fmt(split.later_units)} IE nachspritzen`,
+      );
+      setStatus(`Erinnerung um ${clockTime(due)} Uhr gesetzt.`);
+      onScheduled();
     } catch {
       setStatus("Konnte Erinnerung nicht setzen.");
     } finally {
@@ -25,57 +36,23 @@ export function ReminderCard({ d }: { d: AnalyzeResult }) {
     }
   }
 
-  const split = d.split_recommended ? d.split : null;
-
   return (
     <Card padding={4} className="elev">
       <VStack gap={2}>
         <Text type="label" color="accent">
           Erinnerung
         </Text>
-
-        {split && (
-          <Button
-            label={`In ${split.delay_hours} h an 2. Bolus-Teil erinnern`}
-            variant="primary"
-            isDisabled={busy}
-            onClick={() =>
-              schedule(
-                split.delay_hours * 60,
-                "2. Bolus-Teil fällig",
-                `${fmt(split.later_units)} IE nachspritzen`,
-                `Erinnerung in ${split.delay_hours} h gesetzt.`,
-              )
-            }
-            style={{ width: "100%" }}
-          />
-        )}
-
-        <HStack gap={2}>
-          {[
-            [30, "30 min"],
-            [60, "60 min"],
-            [120, "2 h"],
-          ].map(([m, label]) => (
-            <Button
-              key={m}
-              label={String(label)}
-              variant="secondary"
-              size="sm"
-              isDisabled={busy}
-              onClick={() =>
-                schedule(
-                  Number(m),
-                  "Blutzucker prüfen",
-                  "Erinnerung von GluPilot",
-                  `Erinnerung in ${label} gesetzt.`,
-                )
-              }
-              style={{ flex: 1 }}
-            />
-          ))}
-        </HStack>
-
+        <Text type="supporting" size="sm">
+          Den verzögerten Teil ({fmt(split.later_units)} IE) in {split.delay_hours} h
+          nachspritzen.
+        </Text>
+        <Button
+          label={`In ${split.delay_hours} h erinnern`}
+          variant="primary"
+          isDisabled={busy}
+          onClick={schedule}
+          style={{ width: "100%" }}
+        />
         {status && (
           <Text type="supporting" size="sm">
             {status}

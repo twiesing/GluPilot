@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import {
   analyze,
   ApiError,
+  cancelReminder,
   clearHistory,
   getGlucose,
   getHistory,
+  getReminders,
   type AnalyzeResult,
   type Glucose,
   type HistoryEntry,
+  type Reminder,
 } from "./api";
 import { demoGlucose, demoHistory } from "./demo";
 import { toJpeg } from "./format";
@@ -31,28 +34,55 @@ export function App() {
 
   const [glucose, setGlucose] = useState<Glucose | null>(null);
   const [dexcomConfigured, setDexcomConfigured] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
-  // Aktuellen Glukosewert beim Start und dann im Dexcom-Takt (5 Min) holen.
+  async function loadReminders() {
+    try {
+      setReminders(await getReminders());
+    } catch {
+      setReminders([]);
+    }
+  }
+
+  async function onCancelReminder(id: string) {
+    try {
+      await cancelReminder(id);
+    } finally {
+      void loadReminders();
+    }
+  }
+
+  async function loadGlucose() {
+    try {
+      const g = await getGlucose();
+      setGlucose(g.glucose);
+      setDexcomConfigured(g.dexcom_configured);
+    } catch {
+      if (import.meta.env.DEV) {
+        setGlucose(demoGlucose());
+        setDexcomConfigured(true);
+      }
+    }
+  }
+
+  // Beim Start laden + moderat pollen; bei Rückkehr in die App sofort auffrischen.
+  // Akkuschonend: keine aggressiven Timer, iOS pausiert sie im Hintergrund ohnehin.
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      try {
-        const g = await getGlucose();
-        if (!active) return;
-        setGlucose(g.glucose);
-        setDexcomConfigured(g.dexcom_configured);
-      } catch {
-        if (active && import.meta.env.DEV) {
-          setGlucose(demoGlucose());
-          setDexcomConfigured(true);
-        }
+    void loadGlucose();
+    void loadReminders();
+    const gid = setInterval(loadGlucose, 5 * 60 * 1000);
+    const rid = setInterval(loadReminders, 60 * 1000);
+    const onVisible = () => {
+      if (!document.hidden) {
+        void loadGlucose();
+        void loadReminders();
       }
     };
-    void load();
-    const id = setInterval(load, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
-      active = false;
-      clearInterval(id);
+      clearInterval(gid);
+      clearInterval(rid);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -146,6 +176,9 @@ export function App() {
             error={error}
             glucose={glucose}
             dexcomConfigured={dexcomConfigured}
+            reminders={reminders}
+            onCancelReminder={onCancelReminder}
+            onRemindersChanged={loadReminders}
             onAddFiles={addFiles}
             onRemovePhoto={(i) =>
               setPhotos((p) => p.filter((_, idx) => idx !== i))

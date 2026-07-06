@@ -6,9 +6,10 @@ import {
   TextArea,
   VStack,
 } from "@astryxdesign/core";
-import type { AnalyzeResult, Glucose } from "../api";
+import type { AnalyzeResult, Glucose, Reminder } from "../api";
 import { Masthead } from "../Masthead";
 import { GlucoseBar } from "../GlucoseBar";
+import { ActiveReminders } from "../ActiveReminders";
 import { ResultView } from "../ResultView";
 import { CameraIcon, GalleryIcon, RefreshIcon } from "../icons";
 
@@ -20,6 +21,9 @@ interface Props {
   error: string;
   glucose: Glucose | null;
   dexcomConfigured: boolean;
+  reminders: Reminder[];
+  onCancelReminder: (id: string) => void;
+  onRemindersChanged: () => void;
   onAddFiles: (files: File[]) => void;
   onRemovePhoto: (i: number) => void;
   onHintChange: (v: string) => void;
@@ -45,6 +49,8 @@ export function AnalyzeScreen(p: Props) {
       <Masthead />
 
       <GlucoseBar glucose={p.glucose} dexcomConfigured={p.dexcomConfigured} />
+
+      <ActiveReminders reminders={p.reminders} onCancel={p.onCancelReminder} />
 
       <input
         ref={cameraRef}
@@ -153,17 +159,17 @@ export function AnalyzeScreen(p: Props) {
 
       {p.result && (
         <VStack gap={3}>
-          <ResultView d={p.result} />
+          <ResultView d={p.result} onRemindersChanged={p.onRemindersChanged} />
+          <Text type="supporting" size="xsm">
+            {p.result.disclaimer}
+          </Text>
           <Button
             label="Neue Mahlzeit"
-            variant="secondary"
+            variant="primary"
             icon={<RefreshIcon size={18} />}
             onClick={p.onReset}
             style={{ width: "100%" }}
           />
-          <Text type="supporting" size="xsm">
-            {p.result.disclaimer}
-          </Text>
         </VStack>
       )}
     </div>

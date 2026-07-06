@@ -3,6 +3,16 @@ export function fmt(n: number | string): string {
   return typeof n === "number" ? String(n).replace(".", ",") : n;
 }
 
+const CLOCK = new Intl.DateTimeFormat("de-DE", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/** Uhrzeit HH:MM aus einem Epoch-Timestamp. */
+export function clockTime(epochMs: number): string {
+  return CLOCK.format(new Date(epochMs));
+}
+
 /** Skaliert und komprimiert eine Bilddatei zu einem JPEG-Data-URL. */
 export function toJpeg(
   file: File,

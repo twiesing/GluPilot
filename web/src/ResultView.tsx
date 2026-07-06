@@ -20,7 +20,13 @@ const CONF_VARIANT: Record<string, BadgeVariant> = {
   niedrig: "error",
 };
 
-export function ResultView({ d }: { d: AnalyzeResult }) {
+export function ResultView({
+  d,
+  onRemindersChanged,
+}: {
+  d: AnalyzeResult;
+  onRemindersChanged: () => void;
+}) {
   const hasCorrection = d.correction_units != null;
   return (
     <VStack gap={3}>
@@ -148,8 +154,10 @@ export function ResultView({ d }: { d: AnalyzeResult }) {
         </Card>
       )}
 
-      {/* Erinnerung (nur wenn Pushover serverseitig konfiguriert) */}
-      {d.reminders_enabled && <ReminderCard d={d} />}
+      {/* Erinnerung (nur bei Split-Bolus und wenn Pushover konfiguriert) */}
+      {d.reminders_enabled && (
+        <ReminderCard d={d} onScheduled={onRemindersChanged} />
+      )}
 
       {/* Bestandteile */}
       <Card padding={4}>

@@ -15,7 +15,13 @@ import {
 } from "./dosing.js";
 import { getLatestGlucose, dexcomConfigured } from "./dexcom.js";
 import { appendHistory, readHistory, clearHistory } from "./history.js";
-import { pushConfigured, addReminder, startReminderScheduler } from "./push.js";
+import {
+  pushConfigured,
+  addReminder,
+  listReminders,
+  removeReminder,
+  startReminderScheduler,
+} from "./push.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(HERE, "..", "public");
@@ -224,8 +230,21 @@ app.post<{ Body: ReminderBody }>("/reminders", async (request, reply) => {
   const title = typeof b.title === "string" && b.title.trim() ? b.title.trim() : "GluPilot";
   const body =
     typeof b.body === "string" && b.body.trim() ? b.body.trim() : "Erinnerung";
-  const id = await addReminder(minutes, title, body);
-  return { id, due_in_minutes: minutes };
+  const { id, due } = await addReminder(minutes, title, body);
+  return { id, due };
+});
+
+// Aktive Erinnerungen auflisten.
+app.get("/reminders", async () => ({ reminders: await listReminders() }));
+
+// Erinnerung abbrechen.
+app.delete<{ Params: { id: string } }>("/reminders/:id", async (request, reply) => {
+  const ok = await removeReminder(request.params.id);
+  if (!ok) {
+    reply.code(404).send({ error: "Erinnerung nicht gefunden." });
+    return;
+  }
+  return { status: "cancelled" };
 });
 
 app

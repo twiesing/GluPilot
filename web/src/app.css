@@ -437,9 +437,10 @@ body {
   justify-content: center;
   gap: 4px;
   padding: 8px 10px calc(env(safe-area-inset-bottom) + 8px);
-  background: color-mix(in srgb, var(--color-background-card) 88%, transparent);
-  backdrop-filter: saturate(1.4) blur(12px);
+  /* Solider Balken, damit die iOS-Safe-Area als Tab-Bar liest, nicht als Lücke. */
+  background: var(--color-background-card);
   border-top: 1px solid var(--color-border);
+  box-shadow: 0 -6px 20px -12px rgba(20, 25, 30, 0.25);
 }
 .bottomnav__inner {
   display: flex;

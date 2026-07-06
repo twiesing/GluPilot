@@ -38,17 +38,32 @@ async function save(list: Reminder[]): Promise<void> {
 
 let counter = 0;
 
-/** Legt eine Erinnerung an; delayMinutes ab jetzt. Gibt die ID zurück. */
+/** Legt eine Erinnerung an; delayMinutes ab jetzt. Gibt ID und Fälligkeit zurück. */
 export async function addReminder(
   delayMinutes: number,
   title: string,
   body: string,
-): Promise<string> {
+): Promise<{ id: string; due: number }> {
   const list = await load();
   const id = `${Date.now()}-${counter++}`;
-  list.push({ id, due: Date.now() + delayMinutes * 60_000, title, body });
+  const due = Date.now() + delayMinutes * 60_000;
+  list.push({ id, due, title, body });
   await save(list);
-  return id;
+  return { id, due };
+}
+
+/** Aktive (noch nicht verschickte) Erinnerungen. */
+export async function listReminders(): Promise<Reminder[]> {
+  return load();
+}
+
+/** Bricht eine Erinnerung ab. true, wenn sie existierte. */
+export async function removeReminder(id: string): Promise<boolean> {
+  const list = await load();
+  const next = list.filter((r) => r.id !== id);
+  if (next.length === list.length) return false;
+  await save(next);
+  return true;
 }
 
 async function send(r: Reminder): Promise<void> {

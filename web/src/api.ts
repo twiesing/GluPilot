@@ -141,17 +141,42 @@ export async function getHistory(): Promise<HistoryEntry[]> {
   return data.entries ?? [];
 }
 
+export interface Reminder {
+  id: string;
+  due: number;
+  title: string;
+  body: string;
+}
+
 export async function scheduleReminder(
   minutes: number,
   title: string,
   body: string,
-): Promise<void> {
+): Promise<{ id: string; due: number }> {
   const res = await fetch("/reminders", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ minutes, title, body }),
   });
   if (!res.ok) throw new ApiError(res.status, "HTTP " + res.status);
+  return res.json();
+}
+
+export async function getReminders(): Promise<Reminder[]> {
+  const res = await fetch("/reminders", { headers: authHeaders() });
+  if (!res.ok) throw new ApiError(res.status, "HTTP " + res.status);
+  const data = await res.json();
+  return data.reminders ?? [];
+}
+
+export async function cancelReminder(id: string): Promise<void> {
+  const res = await fetch(`/reminders/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new ApiError(res.status, "HTTP " + res.status);
+  }
 }
 
 export async function clearHistory(): Promise<void> {
