@@ -1,8 +1,9 @@
 node_modules/
 dist/
 data/
-# public/ wird aus web/ gebaut (Vite outDir).
-public/
+# Nur das Root-public/ (Vite-Build-Output) ignorieren – web/public/ (Quelle
+# mit Icons, Manifest, Service-Worker) MUSS getrackt werden.
+/public/
 .env
 *.log
 .DS_Store

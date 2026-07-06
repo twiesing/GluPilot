@@ -1,0 +1,23 @@
+{
+  "name": "GluPilot",
+  "short_name": "GluPilot",
+  "description": "Foto einer Mahlzeit → geschätzte Kohlenhydrate, BE und Insulinmenge.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f1f1",
+  "theme_color": "#f1f1f1",
+  "lang": "de",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
