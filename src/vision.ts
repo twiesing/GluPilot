@@ -134,3 +134,29 @@ export async function estimateCarbs(
 
   return JSON.parse(content) as CarbEstimate;
 }
+
+/** Schätzung allein aus einer Textbeschreibung (kein Foto). */
+export async function estimateCarbsFromText(
+  description: string,
+): Promise<CarbEstimate> {
+  const userText =
+    "Es gibt KEIN Foto. Schätze die Kohlenhydrate anhand der Textbeschreibung " +
+    "der Mahlzeit. Wenn Mengen fehlen, nimm realistische, typische Portionsgrößen " +
+    `an (lieber die obere Mitte als zu wenig). Beschreibung: ${description.trim()}`;
+
+  const response = await client.chat.completions.create({
+    model: MODEL,
+    response_format: { type: "json_schema", json_schema: JSON_SCHEMA },
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userText },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("Keine Antwort vom Modell erhalten.");
+  }
+
+  return JSON.parse(content) as CarbEstimate;
+}

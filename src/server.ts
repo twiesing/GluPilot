@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
-import { estimateCarbs } from "./vision.js";
+import { estimateCarbs, estimateCarbsFromText } from "./vision.js";
 import {
   calculateDosing,
   splitBolus,
@@ -14,7 +14,12 @@ import {
   CORRECTION_THRESHOLD_MGDL,
 } from "./dosing.js";
 import { getLatestGlucose, dexcomConfigured } from "./dexcom.js";
-import { appendHistory, readHistory, clearHistory } from "./history.js";
+import {
+  appendHistory,
+  readHistory,
+  clearHistory,
+  removeHistory,
+} from "./history.js";
 import {
   pushConfigured,
   addReminder,
@@ -89,6 +94,7 @@ interface AnalyzeBody {
   images?: unknown;
   image?: unknown;
   hint?: unknown;
+  text?: unknown;
 }
 
 /** Erster nicht-leerer String aus den Kandidaten, getrimmt. */
@@ -104,14 +110,19 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
   const rawBody = request.body;
   let images: string[] = [];
   let jsonHint: unknown;
+  let text: string | undefined;
 
   if (Buffer.isBuffer(rawBody)) {
     // Rohes Foto als Datei-Body (einfachster Shortcuts-Weg).
     images = [rawBody.toString("base64")];
   } else {
-    // JSON: { images: [base64, ...] } oder { image: base64 }, optional hint.
+    // JSON: { images: [base64, ...] } oder { image: base64 }, optional hint;
+    // alternativ { text: "..." } für eine reine Textbeschreibung ohne Foto.
     const body = (rawBody ?? {}) as AnalyzeBody;
     jsonHint = body.hint;
+    if (typeof body.text === "string" && body.text.trim().length > 0) {
+      text = body.text.trim();
+    }
     const raw = body.images ?? (body.image != null ? [body.image] : []);
     const list = Array.isArray(raw) ? raw : [];
     images = list.filter((i): i is string => typeof i === "string" && i.length > 0);
@@ -135,19 +146,23 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
     "analyze request",
   );
 
-  if (images.length === 0) {
+  if (images.length === 0 && !text) {
     reply.code(400).send({
       error:
-        "Kein Bild erhalten. Sende das Foto als Datei-Body (Content-Type image/*) " +
-        "oder als JSON { image: <base64> } bzw. { images: [<base64>, ...] }.",
+        "Kein Bild und kein Text erhalten. Sende ein Foto (Datei-Body oder " +
+        "JSON { images: [...] }) oder eine Beschreibung { text: \"...\" }.",
     });
     return;
   }
 
   try {
     // Analyse und Glukoseabruf parallel – Dexcom blockiert die Analyse nie.
+    const estimatePromise =
+      images.length > 0
+        ? estimateCarbs(images, hint)
+        : estimateCarbsFromText(text ?? "");
     const [estimate, glucose] = await Promise.all([
-      estimateCarbs(images, hint),
+      estimatePromise,
       getLatestGlucose(),
     ]);
     const dosing = calculateDosing(estimate.carbs_g, glucose?.mgdl);
@@ -166,7 +181,7 @@ app.post<{ Querystring: { hint?: string } }>("/analyze", async (request, reply) 
       meal_units: dosing.meal_units,
       correction_units: dosing.correction_units,
       confidence: estimate.confidence,
-      hint: hint ?? "",
+      hint: hint ?? text ?? "",
       items: estimate.items,
       glucose_mgdl: glucose?.mgdl ?? null,
       image_count: images.length,
@@ -203,7 +218,17 @@ app.get("/glucose", async () => ({
 // Verlauf früherer Berechnungen (neueste zuerst).
 app.get("/history", async () => ({ entries: await readHistory() }));
 
-// Verlauf löschen.
+// Einzelnen Verlaufseintrag löschen.
+app.delete<{ Params: { id: string } }>("/history/:id", async (request, reply) => {
+  const ok = await removeHistory(request.params.id);
+  if (!ok) {
+    reply.code(404).send({ error: "Eintrag nicht gefunden." });
+    return;
+  }
+  return { status: "deleted" };
+});
+
+// Gesamten Verlauf löschen.
 app.delete("/history", async () => {
   await clearHistory();
   return { status: "cleared" };

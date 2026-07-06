@@ -35,6 +35,7 @@ export function demoHistory(): HistoryEntry[] {
     items: [string, number][],
     hint = "",
   ): HistoryEntry => ({
+    id: `demo-${ms}`,
     ts: ago(ms),
     insulin_units: iu,
     insulin_units_exact: iu,

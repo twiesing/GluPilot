@@ -47,6 +47,7 @@ export interface AnalyzeResult {
 }
 
 export interface HistoryEntry {
+  id: string;
   ts: string;
   insulin_units: number;
   insulin_units_exact: number;
@@ -104,6 +105,17 @@ export async function analyze(
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ images, hint }),
+  });
+  if (!res.ok) throw new ApiError(res.status, "HTTP " + res.status);
+  return res.json();
+}
+
+/** Analyse allein aus einer Textbeschreibung (kein Foto). */
+export async function analyzeText(text: string): Promise<AnalyzeResult> {
+  const res = await fetch("/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ text }),
   });
   if (!res.ok) throw new ApiError(res.status, "HTTP " + res.status);
   return res.json();
@@ -171,6 +183,16 @@ export async function getReminders(): Promise<Reminder[]> {
 
 export async function cancelReminder(id: string): Promise<void> {
   const res = await fetch(`/reminders/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new ApiError(res.status, "HTTP " + res.status);
+  }
+}
+
+export async function deleteHistoryEntry(id: string): Promise<void> {
+  const res = await fetch(`/history/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: authHeaders(),
   });

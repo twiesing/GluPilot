@@ -12,7 +12,7 @@ import {
 import type { HistoryEntry } from "../api";
 import { fmt } from "../format";
 import { Masthead } from "../Masthead";
-import { HistoryIcon, RefreshIcon } from "../icons";
+import { HistoryIcon, RefreshIcon, TrashIcon } from "../icons";
 
 const HIST_FMT = new Intl.DateTimeFormat("de-DE", {
   weekday: "short",
@@ -54,9 +54,11 @@ function meta(e: HistoryEntry): string {
 export function HistoryScreen({
   entries,
   onClear,
+  onDelete,
 }: {
   entries: HistoryEntry[];
   onClear: () => void;
+  onDelete: (id: string) => void;
 }) {
   const today = entries.filter((e) => isToday(e.ts));
   const todayIU = today.reduce((s, e) => s + e.insulin_units, 0);
@@ -113,15 +115,25 @@ export function HistoryScreen({
               </HStack>
               <Divider variant="subtle" />
               <List>
-                {entries.map((e, i) => (
+                {entries.map((e) => (
                   <Item
-                    key={i}
+                    key={e.id}
                     label={food(e)}
                     description={meta(e)}
                     endContent={
-                      <Text weight="semibold" className="metric">
-                        {fmt(e.insulin_units)} IE
-                      </Text>
+                      <HStack gap={1} vAlign="center">
+                        <Text weight="semibold" className="metric">
+                          {fmt(e.insulin_units)} IE
+                        </Text>
+                        <Button
+                          label="Eintrag löschen"
+                          isIconOnly
+                          variant="ghost"
+                          size="sm"
+                          icon={<TrashIcon size={16} />}
+                          onClick={() => onDelete(e.id)}
+                        />
+                      </HStack>
                     }
                   />
                 ))}

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   analyze,
+  analyzeText,
   ApiError,
   cancelReminder,
   clearHistory,
+  deleteHistoryEntry,
   getGlucose,
   getHistory,
   getReminders,
@@ -130,6 +132,22 @@ export function App() {
     }
   }
 
+  async function runAnalyzeText(text: string) {
+    if (!text.trim()) return;
+    setError("");
+    setResult(null);
+    setLoading(true);
+    try {
+      const d = await analyzeText(text.trim());
+      setResult(d);
+      void loadHistory();
+    } catch (e) {
+      handleError(e, "Analyse fehlgeschlagen. Läuft der Server?");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function resetAnalyze() {
     setPhotos([]);
     setHint("");
@@ -160,6 +178,16 @@ export function App() {
     }
   }
 
+  async function onDeleteHistoryEntry(id: string) {
+    setHistory((h) => h.filter((e) => e.id !== id));
+    try {
+      await deleteHistoryEntry(id);
+    } catch (e) {
+      handleError(e, "Eintrag konnte nicht gelöscht werden.");
+      void loadHistory();
+    }
+  }
+
   function goTo(s: Screen) {
     setScreen(s);
     if (s === "history") void loadHistory();
@@ -187,12 +215,17 @@ export function App() {
             }
             onHintChange={setHint}
             onAnalyze={runAnalyze}
+            onAnalyzeText={runAnalyzeText}
             onReset={resetAnalyze}
             onDismissError={() => setError("")}
           />
         )}
         {screen === "history" && (
-          <HistoryScreen entries={history} onClear={onClearHistory} />
+          <HistoryScreen
+            entries={history}
+            onClear={onClearHistory}
+            onDelete={onDeleteHistoryEntry}
+          />
         )}
         {screen === "info" && (
           <SettingsScreen

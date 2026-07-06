@@ -13,6 +13,7 @@ const FILE = process.env.HISTORY_FILE ?? "data/history.jsonl";
 const MAX = Number(process.env.HISTORY_MAX ?? 0);
 
 export interface HistoryEntry {
+  id: string;
   ts: string;
   insulin_units: number;
   insulin_units_exact: number;
@@ -27,14 +28,10 @@ export interface HistoryEntry {
   image_count: number;
 }
 
-/** Hängt einen Eintrag an. Fehler werden geworfen – der Aufrufer loggt sie. */
-export async function appendHistory(entry: HistoryEntry): Promise<void> {
-  await mkdir(dirname(FILE), { recursive: true });
-  await appendFile(FILE, JSON.stringify(entry) + "\n", "utf8");
-}
+let counter = 0;
 
-/** Neueste Einträge zuerst (max. HISTORY_MAX). Leere Liste, wenn nichts da ist. */
-export async function readHistory(): Promise<HistoryEntry[]> {
+/** Alle Einträge in Dateireihenfolge (älteste zuerst). */
+async function readRaw(): Promise<HistoryEntry[]> {
   let text: string;
   try {
     text = await readFile(FILE, "utf8");
@@ -52,8 +49,37 @@ export async function readHistory(): Promise<HistoryEntry[]> {
       // Beschädigte Zeile überspringen.
     }
   }
-  entries.reverse();
+  return entries;
+}
+
+/** Hängt einen Eintrag an (ID wird hier vergeben). Gibt die ID zurück. */
+export async function appendHistory(
+  entry: Omit<HistoryEntry, "id">,
+): Promise<string> {
+  const id = `${Date.now()}-${counter++}`;
+  await mkdir(dirname(FILE), { recursive: true });
+  await appendFile(FILE, JSON.stringify({ id, ...entry }) + "\n", "utf8");
+  return id;
+}
+
+/** Neueste Einträge zuerst (max. HISTORY_MAX). Leere Liste, wenn nichts da ist. */
+export async function readHistory(): Promise<HistoryEntry[]> {
+  const entries = (await readRaw()).reverse();
   return MAX > 0 ? entries.slice(0, MAX) : entries;
+}
+
+/** Löscht einen einzelnen Eintrag. true, wenn er existierte. */
+export async function removeHistory(id: string): Promise<boolean> {
+  const entries = await readRaw();
+  const next = entries.filter((e) => e.id !== id);
+  if (next.length === entries.length) return false;
+  await mkdir(dirname(FILE), { recursive: true });
+  await writeFile(
+    FILE,
+    next.map((e) => JSON.stringify(e)).join("\n") + (next.length ? "\n" : ""),
+    "utf8",
+  );
+  return true;
 }
 
 /** Löscht die gesamte Historie. */
